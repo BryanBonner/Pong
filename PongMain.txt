@@ -1,0 +1,36 @@
+﻿//Author: Bryan Bonner
+//Author's email: bonnerbryan@csu.fullerton.edu
+//Course: CPSC223N
+//Assignment number: 6
+//Due date: May 6, 2015
+//Source files in this program: PongLogic.cs, PongMain.cs, PonForm.cs, PongForm.Designer.cs
+//Purpose of this entire program:  Emulate the atari game "Pong." A player enters
+//a ball speed and the ball gets a random starting direction, when a paddle hits the ball 
+//it is reversed. If the ball is missed by the player's paddle, then the other person gets
+//a point. The game ends when a player accumulates 5 points.
+//
+//Name of this file: PongMain.cs
+//Purpose of this file: Provides the code to fire off the user interface.
+//
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Pong
+{
+    static class PongMain
+    {
+        /// <summary>
+        /// The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        static void Main()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new PongForm());
+        }
+    }
+}

@@ -1,0 +1,29 @@
+﻿//Author: Bryan Bonner
+//Author's email: bonnerbryan@csu.fullerton.edu
+//Course: CPSC223N
+//Assignment number: 6
+//Due date: May 6, 2015
+//Source files in this program: PongLogic.cs, PongMain.cs, PonForm.cs, PongForm.Designer.cs
+//Purpose of this entire program:  Emulate the atari game "Pong." A player enters
+//a ball speed and the ball gets a random starting direction, when a paddle hits the ball 
+//it is reversed. If the ball is missed by the player's paddle, then the other person gets
+//a point. The game ends when a player accumulates 5 points.
+//
+//Name of this file: PongLogic.cs
+//Purpose of this file: Provides a simple algorithm that gets a starting random direction.
+//
+using System;
+using System.Text;
+
+namespace Pong
+{
+    class PongLogic
+    {
+        //rolls a 0 or 1 to see if it will go left or right direction
+        public static int getStartingDirection()
+        {
+            Random r = new Random();
+            return r.Next(0, 1);
+        }
+    }
+}

@@ -1,0 +1,244 @@
+﻿//Author: Bryan Bonner
+//Author's email: bonnerbryan@csu.fullerton.edu
+//Course: CPSC223N
+//Assignment number: 6
+//Due date: May 6, 2015
+//Source files in this program: PongLogic.cs, PongMain.cs, PonForm.cs, PongForm.Designer.cs
+//Purpose of this entire program:  Emulate the atari game "Pong." A player enters
+//a ball speed and the ball gets a random starting direction, when a paddle hits the ball 
+//it is reversed. If the ball is missed by the player's paddle, then the other person gets
+//a point. The game ends when a player accumulates 5 points.
+//
+//Name of this file: PongForm.cs
+//Purpose of this file: Provides the user interface layout and objects/buttons/labels
+//
+using System;
+using System.Drawing;
+using System.Windows.Forms;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+
+namespace Pong
+{
+    public partial class PongForm : Form
+    {
+        int player1Score = 0;
+        int player2Score = 0;
+        int ball_speed_top;
+        int ball_speed_left;
+        public static  bool p1MoveUp, p1MoveDown, p2MoveUp, p2MoveDown;
+
+        //Constructor --
+        public PongForm()
+        {
+            InitializeComponent();
+
+            //Copied code from stackoverflow.com to disable flickering effect
+            int style = NativeWinAPI.GetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE);
+            style |= NativeWinAPI.WS_EX_COMPOSITED;
+            NativeWinAPI.SetWindowLong(this.Handle, NativeWinAPI.GWL_EXSTYLE, style);
+            //MessageBox.Show("Enter starting ball speed");
+        }
+        internal static class NativeWinAPI
+        {
+            //disables flickering effects of graphics
+            internal static readonly int GWL_EXSTYLE = -20;
+            internal static readonly int WS_EX_COMPOSITED = 0x02000000;
+
+            [DllImport("user32")]
+            internal static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+            [DllImport("user32")]
+            internal static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+        }
+        private void newGame_btn_Click(object sender, EventArgs e)
+        {
+            //parses input for speed of the ball -- input by user
+            ball_speed_left = int.Parse(startSpeed_tbox.Text);
+            speed_lbl.Text = ball_speed_left.ToString();
+            ball_speed_top = ball_speed_left;  
+            game_Timer.Enabled = true; //starts timer
+            reset_btn.Enabled = true; //enables reset button
+            reset_btn.Visible = true; //shows reset button
+            newGame_btn.Visible = false; //hides start button
+            startSpeed_tbox.Enabled = false; //disables textbox input
+        }
+
+        private void game_Timer_Tick(object sender, EventArgs e)
+        {  //rolls a 0 or 1 to see which direction it starts
+            if (PongLogic.getStartingDirection() == 0)
+            {
+                ball_box.Left += ball_speed_left; //x coordinate movement
+                ball_box.Top += ball_speed_top; //y coord movement
+            }
+            else
+            {
+                ball_box.Left -= ball_speed_left; //x coordinate movement
+                ball_box.Top -= ball_speed_top;//y coord movement
+            }
+            paddleMovement(); //enables simultaneous movement from both paddles
+            checkPlayerCollision(); //checks collisions between the ball and paddles
+            checkAreaCollisions(); //checks collisions between the ball and the bottom & top game area
+            if(player1Score == 5)
+            {
+                game_Timer.Enabled = false;
+                MessageBox.Show("Player 1 Wins!");
+              
+            }
+            if (player2Score == 5)
+            {
+                game_Timer.Enabled = false;
+                MessageBox.Show("Player 2 Wins!");
+            }
+        }
+        private void checkPlayerCollision()
+        {
+            if (ball_box.Bounds.IntersectsWith(paddle1_box.Bounds))
+            {
+                game_Timer.Enabled = false; //pauses timer in order to correctly increment
+                ball_speed_left -= 1; //increments speed after collision success
+                ball_speed_top -= 1;
+                speed_lbl.Text = (-1 * ball_speed_left).ToString();  //updates speed label         
+                ball_speed_left = -ball_speed_left; //reverses ball direction
+                ball_speed_top = -ball_speed_top;
+                game_Timer.Enabled = true; //continues game
+            }
+            if (ball_box.Bounds.IntersectsWith(paddle2_box.Bounds))
+            {
+                game_Timer.Enabled = false; //pauses game timer to increment speed and update label
+                ball_speed_left += 1;
+                ball_speed_top += 1;
+                speed_lbl.Text = ball_speed_left.ToString();
+                ball_speed_left = -ball_speed_left;
+                ball_speed_top = -ball_speed_top;//reverses ball direction 
+                game_Timer.Enabled = true;
+            }
+        }
+     
+        private void checkAreaCollisions()
+        {
+            if (ball_box.Location.Y > 600 || ball_box.Location.Y < 10)
+            {
+                ball_speed_top = -ball_speed_top;              
+            }
+                //ball misses left paddle - player 2 score is updated & ball is reset
+            else if (ball_box.Location.X >= 1330)
+            {
+                game_Timer.Enabled = false;
+                player1Score++;
+                playerLeftScore_lbl.Text = player1Score.ToString();
+                game_Timer.Enabled = true;
+                resetBall();
+            }
+            //ball misses left paddle - player 1 score is updated & ball is reset
+            else if (ball_box.Location.X <= 2)
+            {
+                game_Timer.Enabled = false;
+                player2Score++;
+                playerRightScore_lbl.Text = player2Score.ToString();
+                game_Timer.Enabled = true;
+                resetBall();
+            }
+        }
+        private void resetBall()
+        { //resets ball to middle of the board
+            PongLogic.getStartingDirection();
+            ball_box.Location = new Point(625, 298);
+           //resets to a reasonable speed
+            ball_speed_left = 10;
+            ball_speed_top = 10;
+            speed_lbl.Text = ball_speed_left.ToString();  
+        }
+        public void paddleMovement()
+        { //checks bool for keydown/up and moves paddle - both are checked simultaneously
+            if (p1MoveUp == true)
+                if(paddle1_box.Top != 0)
+                    paddle1_box.Top -= 5;
+            if (p1MoveDown == true)
+                if (paddle1_box.Top != 550)
+                    paddle1_box.Top += 5;
+          //checks bool for keydown/up and moves paddle - both are checked simultaneously
+            if (p2MoveUp == true)
+                if (paddle2_box.Top != 0)
+                paddle2_box.Top -= 5;
+            if (p2MoveDown == true)
+                if (paddle2_box.Top != 550)
+                    paddle2_box.Top += 5;
+        }
+        private void PongForm_KeyDown(object sender, KeyEventArgs e)
+        { //handles simultaneous movement of 2 paddles by using a boolean value
+            if (e.KeyCode == Keys.W)
+                p1MoveUp = true;
+            if (e.KeyCode == Keys.S)
+                p1MoveDown = true;
+            if (e.KeyCode == Keys.Up)
+                p2MoveUp = true;
+            if (e.KeyCode == Keys.Down)
+                p2MoveDown = true;
+            //pressing escape closes the application
+            if (e.KeyCode == Keys.Escape)
+                Application.Exit();
+        }
+        private void PongForm_KeyUp(object sender, KeyEventArgs e)
+        { //handles simultaneous movement of 2 paddles by using a boolean value
+            if (e.KeyCode == Keys.W)
+                p1MoveUp = false;
+            if (e.KeyCode == Keys.S)
+                p1MoveDown = false;
+
+            if (e.KeyCode == Keys.Up)
+                p2MoveUp = false;
+            if (e.KeyCode == Keys.Down)
+                p2MoveDown = false;
+        }
+        private void exit_btn_Click(object sender, EventArgs e)
+        {
+            Application.Exit(); //close application by clicking exit or hitting "esc"
+        }
+        private void pause_btn_Click(object sender, EventArgs e)
+        {
+            game_Timer.Enabled = false; //pause game timer
+            resume.Enabled = true; //show resume button
+            resume.Visible = true;
+            pause_btn.Enabled = false;
+            pause_btn.Visible = false; //hide pause button
+        }
+        private void resume_Click(object sender, EventArgs e)
+        {
+            game_Timer.Enabled = true; //restart game timer
+            resume.Visible = false; //hide resume button
+            resume.Enabled = false;
+            pause_btn.Enabled = true;
+            pause_btn.Visible = true; //show pause button again after clicking resume
+        }
+        private void reset_btn_Click(object sender, EventArgs e)
+        {
+            //run the program again and close this one
+            Process.Start(Application.StartupPath + "\\Pong");
+            //close this one
+            Process.GetCurrentProcess().Kill();
+        }
+        protected override bool ProcessDialogKey(Keys keyData)
+       {//Keeps focus on the Form to allow keys to continue controlling the paddles
+           return false;
+       }
+        protected override void OnLostFocus(EventArgs e)
+        { //Keeps focus on the Form to allow keys to continue controlling the paddles
+            base.OnLostFocus(e);
+            this.Focus();
+        }
+        protected override void OnDeactivate(EventArgs e)
+        { //Keeps focus on the Form to allow keys to continue controlling the paddles
+            base.OnDeactivate(e);
+            this.Focus();
+        }
+        private void playground_Paint(object sender, PaintEventArgs e)
+        {
+            //converts rectangle picturebox into an ellipse
+            System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath();
+            gp.AddEllipse(0, 0, ball_box.Width - 3, ball_box.Height - 3);
+            Region rg = new Region(gp);
+            ball_box.Region = rg;
+        } 
+    }
+}
